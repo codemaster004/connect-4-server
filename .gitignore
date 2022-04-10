@@ -4,3 +4,6 @@
 
 # Idle files
 .idea/
+
+# EnvFile
+/.env
