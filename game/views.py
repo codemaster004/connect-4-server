@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect
-from django.http import Http404
+from django.http import Http404, HttpResponse
 
 from .models import GameRoom
+
+import json
 
 
 def index(request):
@@ -25,9 +27,21 @@ def game(request, room_code):
     return render(request, "game/game.html", context)
 
 
-def get_room_players(request):
-    room_code = request.GET.get("room_code")
+def room_status(request, room_code):
 
-    room_object = GameRoom.objects.get(room_id=room_code)
+    players = []
+
+    room_objects = GameRoom.objects.filter(room_id=room_code)
+    if len(room_objects) == 0:
+        room = GameRoom.objects.create(room_id=room_code)
+        room.players_count = 0
+        room.players = json.dumps([])
+        room.save()
+    else:
+        room = room_objects[0]
+        if room.players != '':
+            players = json.loads(room.players)
+
+    return HttpResponse(json.dumps({'players': players}), content_type='application/json')
 
 

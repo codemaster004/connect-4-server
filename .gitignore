@@ -6,4 +6,7 @@
 .idea/
 
 # EnvFile
-/.env
+*.env
+
+# Python enviroment
+/venv/
