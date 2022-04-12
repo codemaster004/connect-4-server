@@ -6,15 +6,33 @@ import json
 from threading import Thread
 
 
-def add_player(roomNumber, new_player):
-    room = GameRoom.objects.get(room_id=roomNumber)
+def add_player(room_number, new_player):
+    room = GameRoom.objects.get(room_id=room_number)
     if room.players != '':
         players = json.loads(room.players)
     else:
         players = []
+
     players.append(new_player)
+
     room.players = json.dumps(players)
     room.players_count += 1
+    room.save()
+
+
+def remove_player(room_number, player):
+    room = GameRoom.objects.get(room_id=room_number)
+    if room.players != '':
+        players = json.loads(room.players)
+    else:
+        return
+    if len(players) == 0:
+        return
+
+    players.remove(player)
+
+    room.players = json.dumps(players)
+    room.players_count -= 1
     room.save()
 
 
@@ -73,6 +91,17 @@ class Connect4Consumer(AsyncJsonWebsocketConsumer):
                 'action': action,
                 'message': message,
                 'event': 'JOIN'
+            })
+
+        if event == 'LEAVE':
+            new_player = action['player']
+            Thread(target=remove_player, args=(self.room_name, new_player)).start()
+
+            await self.channel_layer.group_send(self.room_group_name, {
+                'type': 'send_message',
+                'action': action,
+                'message': message,
+                'event': 'LEAVE'
             })
 
         if event == 'END':
